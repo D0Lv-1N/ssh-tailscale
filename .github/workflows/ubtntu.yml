@@ -1,0 +1,57 @@
+name: Headless Go + Tailscale
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    env:
+      USERNAME: "dolvin"
+      PASSWORD: "whatsapp2"
+      TALESCALE_AUTH_KEY: ${{ secrets.TALESCALE_AUTH_KEY }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Prepare System
+        run: |
+          sudo apt update -y
+          sudo apt upgrade -y
+    
+          
+
+          
+          
+          
+          
+
+      - name: Create User (Optional)
+        run: |
+          sudo useradd -m -s /bin/bash "$USERNAME" || true
+          echo "$USERNAME:$PASSWORD" | sudo chpasswd
+          sudo usermod -aG sudo "$USERNAME" || true
+
+      - name: Install Tailscale
+        run: |
+          curl -fsSL https://tailscale.com/install.sh | sh
+
+      - name: Start Tailscale (Normal Kernel Mode ✅)
+        run: |
+          sudo tailscaled & sleep 5
+          sudo tailscale up \
+            --authkey="${TALESCALE_AUTH_KEY}" \
+            --hostname=runner-${{ github.run_id }} 
+            tailscale ip
+          
+          
+
+      - name: Keep Alive (Prevent Runner From Ending)
+        run: |
+          echo "✅ Connected via Tailscale"
+          echo "➡️  View node in your Tailscale dashboard"
+          echo "🛑 To stop: Cancel workflow manually."
+          while true; do sleep 300; done
