@@ -1,0 +1,29 @@
+name: Windows RDP via Tailscale
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rdp:
+    runs-on: windows-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Set RDP user password
+        run: |
+          net user runneradmin ${{ secrets.RDP_PASSWORD }}
+          reg add "HKLM\System\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+          netsh advfirewall firewall set rule group="remote desktop" new enable=Yes
+
+      - name: Install Tailscale
+        run: |
+          curl -o tailscale.msi https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi
+          msiexec /i tailscale.msi /quiet /norestart
+
+      - name: Login Tailscale
+        run: |
+          "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TS_AUTHKEY }} --hostname=gh-rdp
+
+      - name: Show Tailscale IP
+        run: |
+          "C:\Program Files\Tailscale\tailscale.exe" ip -4
